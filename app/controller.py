@@ -1,6 +1,5 @@
 import flask
-from flask import request, jsonify
-
+from flask import request, jsonify, Response
 from app.service import AppService
 
 app = flask.Flask(__name__)
@@ -35,6 +34,7 @@ def home():
 
 @app.route('/api/v1/resources/books/all', methods=['GET'])
 def api_all():
+    # jsonify, convert dict to json
     return jsonify(books)
 
 
@@ -61,10 +61,40 @@ def api_id():
     # Python dictionaries to the JSON format.
     return jsonify(results)
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return "<h1>404</h1><p>The resource could not be found.</p>", 404
+
 
 @app.route('/transform', methods=["POST"])
-def transform_view():
-    return service.get_uploaded_csv(request)
+def transform_view_csv():
+    result = service.get_uploaded_csv(request)
+    if result:
+        return result
+    else:
+        return Response("{'error':'unable to load csv'}", status=500, mimetype='application/json')
+
+    # todo: is reuqest ko is url k "{
+    #     "url":"https://api.thevirustracker.com/free-api?countryTimeline=IN"
+    #       }" sath hit karna to df bada ajeeb aa rha hai kyuki isme actual data thoda depth me ja kr milega
+    #       means ek do property access k baad
+@app.route('/transform/api', methods=["POST"])
+def transform_view_api():
+    data = request.json
+    result = service.get_api_csv(data['url'])
+    if result:
+        return result
+    else:
+        return Response("{'error':'unable to load csv'}", status=500, mimetype='application/json')
+
+@app.route('/transform/web_tables', methods=["POST"])
+def transform_view_web_tables():
+    data = request.json
+    result = service.get_web_csv(data['url'])
+    if result:
+        return result
+    else:
+        return Response("{'error':'unable to load csv'}", status=500, mimetype='application/json')
 
 
 if __name__ == "__main__":
