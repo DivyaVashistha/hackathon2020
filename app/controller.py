@@ -88,5 +88,14 @@ def transform_view_web_tables():
         return Response("{'error':'unable to load csv'}", status=500, mimetype='application/json')
 
 
+@app.route('/choose_table/<index>')
+def choose_web_table(index):
+    result = service.select_web_table(index)
+    if result:
+        return result
+    else:
+        return Response("{'error':'unable to load csv'}", status=500, mimetype='application/json')
+
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)

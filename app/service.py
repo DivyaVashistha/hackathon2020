@@ -1,3 +1,5 @@
+import os
+from helpers.helper import *
 import pandas as pd
 from flask import jsonify
 from pyspark import SQLContext
@@ -5,10 +7,18 @@ from pyspark.sql import SparkSession
 import requests as r
 from hdfs import InsecureClient
 
+UPLOAD_DIRECTORY = "./files"
+UPLOAD_DIRECTORY = os.path.abspath(UPLOAD_DIRECTORY)
+
 
 class AppService:
 
     def __init__(self):
+        # clearing the content of output & input file
+        df = pd.DataFrame(list())
+        df.to_csv('files/output.csv')
+        df.to_csv('files/input_file.csv')
+
         self.spark = SparkSession \
             .builder \
             .appName("Python Spark SQL Hive integration") \
@@ -16,8 +26,46 @@ class AppService:
             .getOrCreate()
         self.sqlContext = SQLContext(self.spark)
         self.client = InsecureClient('http://localhost:9870')
-        # todo : change this result csv file name
-        self.result_csv = 'daily_rides_data.csv'
+        self.result_csv = 'output.csv'
+        self.table_list = ''
+
+    def __del__(self):
+        # clearing the content of output & input file
+        df = pd.DataFrame(list())
+        df.to_csv('files/output.csv')
+        df.to_csv('files/input_file.csv')
+
+    def get_uploaded_csv(self, request):
+        try:
+            file = request.files['file']
+            data = pd.read_csv(file)
+            write_csv(data)
+            self.spark_df = self.sqlContext.createDataFrame(data)
+            return jsonify(self.spark_df.toJSON().collect())
+        except Exception as e:
+            print(e)
+            return None
+
+    def get_web_csv(self, request_url):
+        try:
+            response = r.get(request_url).content
+            df_list = pd.read_html(response)
+            print(df_list)
+            self.table_list = df_list
+            df_list = [x.to_json() for x in df_list]
+            return jsonify(df_list)
+        except Exception as e:
+            print(e)
+            return None
+
+    def select_web_table(self, index):
+        try:
+            write_csv(self.table_list[int(index)])
+            self.spark_df = self.sqlContext.createDataFrame(self.table_list[int(index)])
+            return jsonify(self.spark_df.toJSON().collect())
+        except Exception as e:
+            print(e)
+            return None
 
     # def hdfs_makedir(self):
     #     self.client.makedirs('/hackathon')
@@ -44,27 +92,6 @@ class AppService:
     #         self.pd_df.to_csv(writer)
     #         print('done')
 
-    def get_uploaded_csv(self, request):
-        try:
-            file = request.files['file']
-            data = pd.read_csv(file)
-            self.spark_df = self.sqlContext.createDataFrame(data)
-            return jsonify(self.spark_df.toJSON().collect())
-        except Exception as e:
-            print(e)
-            return None
-
-    # todo: convert to pyspark df.
-    def get_web_csv(self, request_url):
-        try:
-            response = r.get(request_url).content
-            df_list = pd.read_html(response)
-            print(df_list)
-            df_list = [x.to_json() for x in df_list]
-            return jsonify(df_list)
-        except Exception as e:
-            print(e)
-            return None
 
 
 

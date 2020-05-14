@@ -4,9 +4,11 @@ click==7.1.2
 docopt==0.6.2
 Flask==1.1.2
 hdfs==2.5.8
+html5lib==1.0.1
 idna==2.9
 itsdangerous==1.1.0
 Jinja2==2.11.2
+lxml==4.5.0
 MarkupSafe==1.1.1
 numpy==1.18.4
 pandas==1.0.3
@@ -17,4 +19,5 @@ pytz==2020.1
 requests==2.23.0
 six==1.14.0
 urllib3==1.25.9
+webencodings==0.5.1
 Werkzeug==1.0.1
