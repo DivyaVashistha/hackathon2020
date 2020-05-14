@@ -1,0 +1,11 @@
+from pyspark import SQLContext
+from pyspark.sql import SparkSession
+import requests as r
+
+
+spark = SparkSession \
+            .builder \
+            .appName("Python Spark SQL Hive integration") \
+            .enableHiveSupport() \
+            .getOrCreate()
+sqlContext = SQLContext(self.spark)

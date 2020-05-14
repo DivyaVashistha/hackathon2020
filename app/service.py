@@ -1,4 +1,7 @@
 import os
+from datetime import datetime
+
+from helpers import helper
 from helpers.helper import *
 import pandas as pd
 from flask import jsonify
@@ -14,10 +17,10 @@ UPLOAD_DIRECTORY = os.path.abspath(UPLOAD_DIRECTORY)
 class AppService:
 
     def __init__(self):
-        # clearing the content of output & input file
-        df = pd.DataFrame(list())
-        df.to_csv('files/output.csv')
-        df.to_csv('files/input_file.csv')
+    #     # clearing the content of output & input file
+    #     df = pd.DataFrame(list())
+    #     df.to_csv('files/output.csv')
+    #     df.to_csv('files/input_file.csv')
 
         self.spark = SparkSession \
             .builder \
@@ -28,13 +31,12 @@ class AppService:
         self.client = InsecureClient('http://localhost:9870')
         self.result_csv = 'output.csv'
         self.table_list = ''
-        self.spark_df = ''
 
-    def __del__(self):
-        # clearing the content of output & input file
-        df = pd.DataFrame(list())
-        df.to_csv('files/output.csv')
-        df.to_csv('files/input_file.csv')
+    # def __del__(self):
+    #     # clearing the content of output & input file
+    #     df = pd.DataFrame(list())
+    #     df.to_csv('files/output.csv')
+    #     df.to_csv('files/input_file.csv')
 
     def get_uploaded_csv(self, request):
         try:
@@ -68,6 +70,33 @@ class AppService:
             print(e)
             return None
 
+    def df_printSchema(self):
+        self.spark_df.printSchema()
+        helper.write_history_csv(datetime.now(),"df_printSchema",'spark_df.printSchema()')
+
+    def df_number_of_columns(self):
+        print(len(self.spark_df.columns))
+        helper.write_history_csv(datetime.now(),"df_number_of_columns",'spark_df.printSchema()')
+
+    def read_original_file(self):
+        # for undo
+        df = self.spark.read.format("csv").option("header", "true").load(
+            "/home/nineleaps/projects/hackathon2020/files/history.csv")
+        self.spark_df=df
+
+    def execute_final_df(self):
+        # for undo
+        df = pd.read_csv('/home/nineleaps/projects/hackathon2020/files/history.csv')
+        functions = df['function'].to_list()
+        self.read_original_file()
+        for x in functions:
+            method_name = getattr(self, x, lambda: "invalid")
+            # Call the method as we return it
+            method_name()
+
+    def invalid(self):
+        pass
+
     # def hdfs_makedir(self):
     #     self.client.makedirs('/hackathon')
     #
@@ -92,8 +121,6 @@ class AppService:
     #     with self.client.write('/tmp/my_file.csv', encoding='utf-8') as writer:
     #         self.pd_df.to_csv(writer)
     #         print('done')
-
-
 
 
 

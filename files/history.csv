@@ -1,0 +1,5 @@
+val,date,function,code
+0,2020-05-15 00:33:58.047249,df_printSchema,spark_df.printSchema()
+0,2020-05-15 00:34:04.647826,df_number_of_columns,spark_df.printSchema()
+0,2020-05-15 01:10:23.810363,df_printSchema,spark_df.printSchema()
+0,2020-05-15 01:10:23.827917,df_number_of_columns,spark_df.printSchema()
