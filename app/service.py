@@ -28,6 +28,7 @@ class AppService:
         self.client = InsecureClient('http://localhost:9870')
         self.result_csv = 'output.csv'
         self.table_list = ''
+        self.spark_df = ''
 
     def __del__(self):
         # clearing the content of output & input file
