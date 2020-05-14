@@ -1,5 +1,3 @@
-import json
-
 import pandas as pd
 from flask import jsonify
 from pyspark import SQLContext
@@ -18,30 +16,33 @@ class AppService:
             .getOrCreate()
         self.sqlContext = SQLContext(self.spark)
         self.client = InsecureClient('http://localhost:9870')
+        # todo : change this result csv file name
+        self.result_csv = 'daily_rides_data.csv'
 
-    def hdfs_makedir(self):
-        self.client.makedirs('/hackathon')
-
-    def hdfs_upload(self):
-        self.client.upload(
-            hdfs_path='/hackathon',
-            local_path='files/daily_rides_data.csv'
-        )
-    def hdfs_read(self):
-        """
-        read a csv from hdfs and store in pandas df.
-        """
-        with self.client.read('/tmp/my_file.csv') as reader:
-            self.pd_df = pd.read_csv(reader,error_bad_lines=False)
-            print(self.pd_df.head(5))
-
-    def hdfs_write(self):
-        """
-        write from dataframe to csv and store in hdfs.
-        """
-        with self.client.write('/tmp/my_file.csv', encoding='utf-8') as writer:
-            self.pd_df.to_csv(writer)
-            print('done')
+    # def hdfs_makedir(self):
+    #     self.client.makedirs('/hackathon')
+    #
+    # def hdfs_upload(self):
+    #     self.client.upload(
+    #         hdfs_path='/hackathon',
+    #         # todo: change this filename
+    #         local_path='files/daily_rides_data.csv'
+    #     )
+    # def hdfs_read(self):
+    #     """
+    #     read a csv from hdfs and store in pandas df.
+    #     """
+    #     with self.client.read('/tmp/my_file.csv') as reader:
+    #         self.pd_df = pd.read_csv(reader, error_bad_lines=False)
+    #         print(self.pd_df.head(5))
+    #
+    # def hdfs_write(self):
+    #     """
+    #     write from dataframe to csv and store in hdfs.
+    #     """
+    #     with self.client.write('/tmp/my_file.csv', encoding='utf-8') as writer:
+    #         self.pd_df.to_csv(writer)
+    #         print('done')
 
     def get_uploaded_csv(self, request):
         try:
@@ -49,16 +50,6 @@ class AppService:
             data = pd.read_csv(file)
             self.spark_df = self.sqlContext.createDataFrame(data)
             return jsonify(self.spark_df.toJSON().collect())
-        except Exception as e:
-            print(e)
-            return None
-
-    def get_api_csv(self, request_url):
-        try:
-            response = r.get(request_url).json()
-            result = self.spark.createDataFrame(pd.DataFrame(response))
-            result.show()
-            return response
         except Exception as e:
             print(e)
             return None
@@ -74,3 +65,7 @@ class AppService:
         except Exception as e:
             print(e)
             return None
+
+
+
+

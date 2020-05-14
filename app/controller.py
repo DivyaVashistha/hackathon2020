@@ -1,11 +1,26 @@
+import os
+
 import flask
-from flask import request, jsonify, Response
+from flask import request, jsonify, Response, send_from_directory
 from app.service import AppService
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
 
 service = AppService()
+
+# todo: chang this result file path
+UPLOAD_DIRECTORY = "./files"
+UPLOAD_DIRECTORY = os.path.abspath(UPLOAD_DIRECTORY)
+
+
+@app.route("/download", methods=['GET'])
+def get_file():
+    """Download a file."""
+    path = service.result_csv
+    return send_from_directory(UPLOAD_DIRECTORY, filename=path, as_attachment=True)
+
+
 # Create some test data for our catalog in the form of a list of dictionaries.
 books = [
     {'id': 0,
@@ -24,19 +39,6 @@ books = [
      'first_sentence': 'to wound the autumnal city.',
      'published': '1975'}
 ]
-
-
-@app.route('/', methods=['GET'])
-def home():
-    return '''<h1>Distant Reading Archive</h1>
-<p>A prototype API for distant reading of science fiction novels.</p>'''
-
-
-@app.route('/api/v1/resources/books/all', methods=['GET'])
-def api_all():
-    # jsonify, convert dict to json
-    return jsonify(books)
-
 
 @app.route('/api/v1/resources/books', methods=['GET'])
 def api_id():
@@ -61,6 +63,7 @@ def api_id():
     # Python dictionaries to the JSON format.
     return jsonify(results)
 
+
 @app.errorhandler(404)
 def page_not_found(e):
     return "<h1>404</h1><p>The resource could not be found.</p>", 404
@@ -74,18 +77,6 @@ def transform_view_csv():
     else:
         return Response("{'error':'unable to load csv'}", status=500, mimetype='application/json')
 
-    # todo: is reuqest ko is url k "{
-    #     "url":"https://api.thevirustracker.com/free-api?countryTimeline=IN"
-    #       }" sath hit karna to df bada ajeeb aa rha hai kyuki isme actual data thoda depth me ja kr milega
-    #       means ek do property access k baad
-@app.route('/transform/api', methods=["POST"])
-def transform_view_api():
-    data = request.json
-    result = service.get_api_csv(data['url'])
-    if result:
-        return result
-    else:
-        return Response("{'error':'unable to load csv'}", status=500, mimetype='application/json')
 
 @app.route('/transform/web_tables', methods=["POST"])
 def transform_view_web_tables():
