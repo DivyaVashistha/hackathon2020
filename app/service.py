@@ -5,6 +5,8 @@ from flask import jsonify
 from pyspark import SQLContext
 from pyspark.sql import SparkSession
 import requests as r
+from hdfs import InsecureClient
+
 
 class AppService:
 
@@ -15,6 +17,31 @@ class AppService:
             .enableHiveSupport() \
             .getOrCreate()
         self.sqlContext = SQLContext(self.spark)
+        self.client = InsecureClient('http://localhost:9870')
+
+    def hdfs_makedir(self):
+        self.client.makedirs('/hackathon')
+
+    def hdfs_upload(self):
+        self.client.upload(
+            hdfs_path='/hackathon',
+            local_path='files/daily_rides_data.csv'
+        )
+    def hdfs_read(self):
+        """
+        read a csv from hdfs and store in pandas df.
+        """
+        with self.client.read('/tmp/my_file.csv') as reader:
+            self.pd_df = pd.read_csv(reader,error_bad_lines=False)
+            print(self.pd_df.head(5))
+
+    def hdfs_write(self):
+        """
+        write from dataframe to csv and store in hdfs.
+        """
+        with self.client.write('/tmp/my_file.csv', encoding='utf-8') as writer:
+            self.pd_df.to_csv(writer)
+            print('done')
 
     def get_uploaded_csv(self, request):
         try:
