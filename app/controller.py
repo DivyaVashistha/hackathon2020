@@ -143,6 +143,29 @@ def find_col_countdistinct(column):
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
 
+@app.route('/function/sort/<column>/<condition>', methods=['GET'])
+def sort_col(column, condition):
+    result = service.order_col(column, condition)
+    if result:
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+@app.route('/function/rename/<old_column_name>/<new_col_name>', methods=['GET'])
+def rename_col(old_column_name, new_col_name):
+    result = service.rename_column(old_column_name, new_col_name)
+    if result:
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+@app.route('/function/drop/<column>', methods=['GET'])
+def drop_col(column):
+    result = service.drop_column(column)
+    if result:
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)
