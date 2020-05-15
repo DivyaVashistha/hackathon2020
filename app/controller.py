@@ -148,7 +148,7 @@ def get_schema():
     # service.read_original_file()
     result = service.df_printSchema()
     if result:
-        helper.write_history_csv(datetime.now(), "df_printSchema", 'spark_df.printSchema()')
+        helper.write_history_csv(datetime.now(), "df_printSchema", 'print(spark_df.printSchema())')
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -158,6 +158,7 @@ def get_first():
     # service.read_original_file()
     result = service.get_first()
     if result:
+        helper.write_history_csv(datetime.now(), "get_first", 'print(spark_df.first())')
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -167,6 +168,7 @@ def get_last():
     # service.read_original_file()
     result = service.get_last()
     if result:
+        helper.write_history_csv(datetime.now(), "get_last", 'print(spark_df.orderBy(spark_df[0],ascending=False).head(1))')
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -176,6 +178,7 @@ def get_head(num):
     # service.read_original_file()
     result = service.get_head(num)
     if result:
+        helper.write_history_csv(datetime.now(), "get_head", 'print(spark_df.head(int(num)))')
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -185,6 +188,7 @@ def get_tail(num):
     # service.read_original_file()
     result = service.get_tail(num)
     if result:
+        helper.write_history_csv(datetime.now(), "get_tail", 'print(spark_df.orderBy(spark_df[0],ascending=False).head(int(num)))')
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
