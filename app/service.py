@@ -58,7 +58,7 @@ class AppService:
             df_list = pd.read_html(response)
             print(df_list)
             self.table_list = df_list
-            df_list = [x.to_json() for x in df_list]
+            df_list = [x.head(5).to_dict() for x in df_list]
             return jsonify(df_list)
         except Exception as e:
             print(e)
@@ -68,7 +68,7 @@ class AppService:
         try:
             write_csv(self.table_list[int(index)])
             self.spark_df = self.sqlContext.createDataFrame(self.table_list[int(index)])
-            return jsonify(self.spark_df.toJSON().collect())
+            return self.get_json_df_response()
         except Exception as e:
             print(e)
             return None
