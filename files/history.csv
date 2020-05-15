@@ -3,3 +3,16 @@ val,date,function,code
 0,2020-05-15 00:34:04.647826,df_number_of_columns,spark_df.printSchema()
 0,2020-05-15 01:10:23.810363,df_printSchema,spark_df.printSchema()
 0,2020-05-15 01:10:23.827917,df_number_of_columns,spark_df.printSchema()
+0,2020-05-15 10:51:17.647858,df_printSchema,spark_df.printSchema()
+0,2020-05-15 10:52:32.503519,df_printSchema,spark_df.printSchema()
+0,2020-05-15 10:56:32.226018,df_printSchema,spark_df.printSchema()
+0,2020-05-15 11:01:15.117349,df_printSchema,spark_df.printSchema()
+0,2020-05-15 11:56:29.611805,df_printSchema,spark_df.printSchema()
+0,2020-05-15 12:09:23.337344,df_printSchema,spark_df.printSchema()
+0,2020-05-15 12:30:06.823092,df_printSchema,spark_df.printSchema()
+0,2020-05-15 12:39:11.566480,df_printSchema,spark_df.printSchema()
+0,2020-05-15 14:24:21.501919,get_last,"print(spark_df.orderBy(spark_df[0],ascending=False).head(1))"
+0,2020-05-15 14:24:34.408371,get_tail,"print(spark_df.orderBy(spark_df[0],ascending=False).head(int(num)))"
+0,2020-05-15 14:24:42.437024,get_head,print(spark_df.head(int(num)))
+0,2020-05-15 14:24:47.373200,get_last,"print(spark_df.orderBy(spark_df[0],ascending=False).head(1))"
+0,2020-05-15 14:24:52.830422,get_first,print(spark_df.first())

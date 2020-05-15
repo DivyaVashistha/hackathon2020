@@ -1,6 +1,6 @@
+import json
 import os
 from datetime import datetime
-
 from helpers import helper
 from helpers.helper import *
 import pandas as pd
@@ -10,7 +10,6 @@ from pyspark.sql import SparkSession
 import requests as r
 from hdfs import InsecureClient
 import pyspark.sql.functions as f
-
 
 UPLOAD_DIRECTORY = "./files"
 UPLOAD_DIRECTORY = os.path.abspath(UPLOAD_DIRECTORY)
@@ -74,21 +73,60 @@ class AppService:
             return None
 
     def df_printSchema(self):
-        self.spark_df.printSchema()
-        helper.write_history_csv(datetime.now(),"df_printSchema",'spark_df.printSchema()')
+        try:
+            schema= self.spark_df.schema.json()
+            df_cols=json.loads(schema)
+            l=[]
+            for i in df_cols['fields']:
+                d={}
+                d['name']=i['name']
+                d['nullable']=i['nullable']
+                d['type']=i['type']
+                l.append(d)
 
-    def df_number_of_columns(self):
-        print(len(self.spark_df.columns))
-        helper.write_history_csv(datetime.now(),"df_number_of_columns",'spark_df.printSchema()')
+            d={'total_rows':self.spark_df.count()}
+            l.append(d)
+            d={'total_columns': len(self.spark_df.columns)}
+            l.append(d)
+            x= json.dumps(l)
+            return x
+
+        except:
+            return None
+
+    def get_first(self):
+        try:
+            return jsonify(self.spark_df.limit(1).toJSON().collect())
+        except Exception as e:
+            print(e)
+            return None
+
+    def get_last(self):
+        try:
+            return jsonify(self.spark_df.orderBy(self.spark_df[0],ascending=False).limit(1).toJSON().collect())
+        except:
+            return None
+
+    def get_head(self, num):
+        try:
+            return jsonify(self.spark_df.limit(int(num)).toJSON().collect())
+        except:
+            return None
+
+    def get_tail(self, num):
+        try:
+            return jsonify(self.spark_df.orderBy(self.spark_df[0],ascending=False).limit(int(num)).toJSON().collect())
+        except:
+            return None
 
     def read_original_file(self):
         # for undo
-        df = self.spark.read.format("csv").option("header", "true").load(UPLOAD_DIRECTORY+"/input_file.csv")
-        self.spark_df=df
+        df = self.spark.read.format("csv").option("header", "true").load(UPLOAD_DIRECTORY + "/input_file.csv")
+        self.spark_df = df
 
     def execute_final_df(self):
         # for undo
-        df = pd.read_csv(UPLOAD_DIRECTORY+'/history.csv')
+        df = pd.read_csv(UPLOAD_DIRECTORY + '/history.csv')
         functions = df['function'].to_list()
         self.read_original_file()
         for x in functions:
@@ -133,6 +171,7 @@ class AppService:
         except Exception as e:
             print(e)
             return None
+
 
     def order_col(self, column, condition):
         try:
@@ -186,6 +225,3 @@ class AppService:
     #     with self.client.write('/tmp/my_file.csv', encoding='utf-8') as writer:
     #         self.pd_df.to_csv(writer)
     #         print('done')
-
-
-
