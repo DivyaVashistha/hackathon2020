@@ -9,6 +9,8 @@ from pyspark import SQLContext
 from pyspark.sql import SparkSession
 import requests as r
 from hdfs import InsecureClient
+import pyspark.sql.functions as f
+
 
 UPLOAD_DIRECTORY = "./files"
 UPLOAD_DIRECTORY = os.path.abspath(UPLOAD_DIRECTORY)
@@ -17,10 +19,10 @@ UPLOAD_DIRECTORY = os.path.abspath(UPLOAD_DIRECTORY)
 class AppService:
 
     def __init__(self):
-    #     # clearing the content of output & input file
-    #     df = pd.DataFrame(list())
-    #     df.to_csv('files/output.csv')
-    #     df.to_csv('files/input_file.csv')
+        # clearing the content of output & input file
+        df = pd.DataFrame(list())
+        df.to_csv('files/output.csv')
+        df.to_csv('files/input_file.csv')
 
         self.spark = SparkSession \
             .builder \
@@ -32,11 +34,11 @@ class AppService:
         self.result_csv = 'output.csv'
         self.table_list = ''
 
-    # def __del__(self):
-    #     # clearing the content of output & input file
-    #     df = pd.DataFrame(list())
-    #     df.to_csv('files/output.csv')
-    #     df.to_csv('files/input_file.csv')
+    def __del__(self):
+        # clearing the content of output & input file
+        df = pd.DataFrame(list())
+        df.to_csv('files/output.csv')
+        df.to_csv('files/input_file.csv')
 
     def get_uploaded_csv(self, request):
         try:
@@ -80,13 +82,12 @@ class AppService:
 
     def read_original_file(self):
         # for undo
-        df = self.spark.read.format("csv").option("header", "true").load(
-            "/home/nineleaps/projects/hackathon2020/files/history.csv")
+        df = self.spark.read.format("csv").option("header", "true").load(UPLOAD_DIRECTORY+"/input_file.csv")
         self.spark_df=df
 
     def execute_final_df(self):
         # for undo
-        df = pd.read_csv('/home/nineleaps/projects/hackathon2020/files/history.csv')
+        df = pd.read_csv(UPLOAD_DIRECTORY+'/history.csv')
         functions = df['function'].to_list()
         self.read_original_file()
         for x in functions:
@@ -96,6 +97,37 @@ class AppService:
 
     def invalid(self):
         pass
+
+    def get_col_min(self, column):
+        try:
+            return jsonify(self.spark_df.agg({column: "min"}).collect()[0])
+        except:
+            return None
+
+    def get_col_max(self, column):
+        try:
+            return jsonify(self.spark_df.agg({column: "max"}).collect()[0])
+        except:
+            return None
+
+    def get_col_sum(self, column):
+        try:
+            return jsonify(self.spark_df.agg({column: "sum"}).collect()[0])
+        except:
+            return None
+
+    def get_col_countdistinct(self, column):
+        try:
+            return jsonify(self.spark_df.agg(f.countDistinct(column)).collect()[0])
+        except:
+            return None
+
+    def get_col_avg(self, column):
+        try:
+            return jsonify(self.spark_df.agg({column: "avg"}).collect()[0])
+        except:
+            return None
+
 
     # def hdfs_makedir(self):
     #     self.client.makedirs('/hackathon')

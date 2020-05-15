@@ -97,5 +97,50 @@ def choose_web_table(index):
         return Response("{'error':'unable to load csv'}", status=500, mimetype='application/json')
 
 
+@app.route('/function/col_min/<column>', methods=['GET'])
+def find_col_min(column):
+    result = service.get_col_min(column)
+    if result:
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
+@app.route('/function/col_max/<column>', methods=['GET'])
+def find_col_max(column):
+    result = service.get_col_max(column)
+    if result:
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
+@app.route('/function/col_avg/<column>', methods=['GET'])
+def find_col_avg(column):
+    result = service.get_col_avg(column)
+    if result:
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
+@app.route('/function/col_sum/<column>', methods=['GET'])
+def find_col_sum(column):
+    result = service.get_col_sum(column)
+    if result:
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
+@app.route('/function/col_countdistinct/<column>', methods=['GET'])
+def find_col_countdistinct(column):
+    result = service.get_col_countdistinct(column)
+    if result:
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)
