@@ -212,5 +212,41 @@ def drop_col(column):
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
 
 
+@app.route('/function/trim/<column>', methods=['GET'])
+def trim_col(column):
+    result = service.trim_column(column)
+    if result:
+        helper.write_history_csv(datetime.now(), "trim_column",
+                                 "spark_df = spark_df.withColumn('temp', f.trim(f.col({{column}})))."
+                                 "drop({{column}}).withColumnRenamed('temp', {{column}})".format(name=column))
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
+@app.route('/function/to_upper/<column>', methods=['GET'])
+def upper_col(column):
+    result = service.upper_column(column)
+    if result:
+        helper.write_history_csv(datetime.now(), "drop_column",
+                                 "spark_df = spark_df.withColumn('temp', f.upper(f.col({{column}})))."
+                                 "drop({{column}}).withColumnRenamed('temp', {{column}})".format(name=column))
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
+@app.route('/function/to_lower/<column>', methods=['GET'])
+def lower_col(column):
+    result = service.lower_column(column)
+    if result:
+        helper.write_history_csv(datetime.now(), "drop_column",
+                                 "spark_df = spark_df.withColumn('temp', f.lower(f.col({{column}})))."
+                                 "drop({{column}}).withColumnRenamed('temp', {{column}})".format(name=column))
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)

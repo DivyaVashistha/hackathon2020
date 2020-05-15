@@ -200,6 +200,33 @@ class AppService:
             print(e)
             return None
 
+    def trim_column(self, column):
+        try:
+            self.spark_df = self.spark_df.withColumn('temp', f.trim(f.col(column))).drop(column)\
+                .withColumnRenamed('temp', column)
+            return self.get_json_df_response()
+        except Exception as e:
+            print(e)
+            return None
+
+    def upper_column(self, column):
+        try:
+            self.spark_df = self.spark_df.withColumn('temp', f.upper(f.col(column))).drop(column)\
+                .withColumnRenamed('temp', column)
+            return self.get_json_df_response()
+        except Exception as e:
+            print(e)
+            return None
+
+    def lower_column(self, column):
+        try:
+            self.spark_df = self.spark_df.withColumn('temp', f.lower(f.col(column))).drop(column) \
+                .withColumnRenamed('temp', column)
+            return self.get_json_df_response()
+        except Exception as e:
+            print(e)
+            return None
+
     # def hdfs_makedir(self):
     #     self.client.makedirs('/hackathon')
     #
