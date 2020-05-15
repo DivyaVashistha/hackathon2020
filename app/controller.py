@@ -1,8 +1,10 @@
 import os
+from datetime import datetime
 
 import flask
 from flask import request, jsonify, Response, send_from_directory
 from app.service import AppService
+from helpers import helper
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
@@ -140,6 +142,55 @@ def find_col_countdistinct(column):
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+@app.route('/function/schema', methods=['GET'])
+def get_schema():
+    # service.read_original_file()
+    result = service.df_printSchema()
+    if result:
+        helper.write_history_csv(datetime.now(), "df_printSchema", 'spark_df.printSchema()')
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+@app.route('/function/first', methods=['GET'])
+def get_first():
+    # service.read_original_file()
+    result = service.get_first()
+    if result:
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+@app.route('/function/last', methods=['GET'])
+def get_last():
+    # service.read_original_file()
+    result = service.get_last()
+    if result:
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+@app.route('/function/head/<num>', methods=['GET'])
+def get_head(num):
+    # service.read_original_file()
+    result = service.get_head(num)
+    if result:
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+@app.route('/function/tail/<num>', methods=['GET'])
+def get_tail(num):
+    # service.read_original_file()
+    result = service.get_tail(num)
+    if result:
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
+
 
 
 if __name__ == "__main__":
