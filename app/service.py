@@ -49,8 +49,10 @@ class AppService:
         except Exception as e:
             print(e)
             return None
+
     def get_json_df_response(self):
         return jsonify(self.spark_df.limit(10).toJSON().collect())
+
     def get_web_csv(self, request_url):
         try:
             response = r.get(request_url).content
