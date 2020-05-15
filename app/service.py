@@ -49,8 +49,8 @@ class AppService:
             print(e)
             return None
 
-    def get_json_df_response(self):
-        return jsonify(self.spark_df.limit(10).toJSON().collect())
+    def get_json_df_response(self, number=10):
+        return jsonify(self.spark_df.limit(number).toPandas().to_dict('records'))
 
     def get_web_csv(self, request_url):
         try:
@@ -89,7 +89,7 @@ class AppService:
             l.append(d)
             d = {'total_columns': len(self.spark_df.columns)}
             l.append(d)
-            x = json.dumps(l)
+            x = jsonify(l)
             return x
 
         except:
@@ -97,26 +97,26 @@ class AppService:
 
     def get_first(self):
         try:
-            return jsonify(self.spark_df.limit(1).toJSON().collect())
+            return self.get_json_df_response(1)
         except Exception as e:
             print(e)
             return None
 
     def get_last(self):
         try:
-            return jsonify(self.spark_df.orderBy(self.spark_df[0], ascending=False).limit(1).toJSON().collect())
+            return jsonify(self.spark_df.orderBy(self.spark_df[0], ascending=False).limit(1).toPandas().to_dict('records'))
         except:
             return None
 
     def get_head(self, num):
         try:
-            return jsonify(self.spark_df.limit(int(num)).toJSON().collect())
+            return self.get_json_df_response(num)
         except:
             return None
 
     def get_tail(self, num):
         try:
-            return jsonify(self.spark_df.orderBy(self.spark_df[0], ascending=False).limit(int(num)).toJSON().collect())
+            return jsonify(self.spark_df.orderBy(self.spark_df[0], ascending=False).limit(int(num)).toPandas().to_dict('records'))
         except:
             return None
 
@@ -186,7 +186,6 @@ class AppService:
 
     def rename_column(self, old_column, new_column):
         try:
-
             self.spark_df = self.spark_df.withColumnRenamed(old_column, new_column)
             return self.get_json_df_response()
         except Exception as e:

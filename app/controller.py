@@ -1,10 +1,8 @@
 import os
 from datetime import datetime
-
 import flask
 from flask import request, Response, send_from_directory
 from flask_cors import CORS
-
 from app.service import AppService
 from helpers import helper
 
@@ -207,6 +205,8 @@ def get_tail(num):
 def drop_col(column):
     result = service.drop_column(column)
     if result:
+        helper.write_history_csv(datetime.now(), "drop_column",
+                                 'spark_df=spark_df.drop({name})'.format(name=column))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
