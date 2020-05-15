@@ -1,15 +1,14 @@
 import json
-import os
-from datetime import datetime
-from helpers import helper
-from helpers.helper import *
+
 import pandas as pd
+import pyspark.sql.functions as f
+import requests as r
 from flask import jsonify
+from hdfs import InsecureClient
 from pyspark import SQLContext
 from pyspark.sql import SparkSession
-import requests as r
-from hdfs import InsecureClient
-import pyspark.sql.functions as f
+
+from helpers.helper import *
 
 UPLOAD_DIRECTORY = "./files"
 UPLOAD_DIRECTORY = os.path.abspath(UPLOAD_DIRECTORY)
@@ -76,21 +75,21 @@ class AppService:
 
     def df_printSchema(self):
         try:
-            schema= self.spark_df.schema.json()
-            df_cols=json.loads(schema)
-            l=[]
+            schema = self.spark_df.schema.json()
+            df_cols = json.loads(schema)
+            l = []
             for i in df_cols['fields']:
-                d={}
-                d['name']=i['name']
-                d['nullable']=i['nullable']
-                d['type']=i['type']
+                d = {}
+                d['name'] = i['name']
+                d['nullable'] = i['nullable']
+                d['type'] = i['type']
                 l.append(d)
 
-            d={'total_rows':self.spark_df.count()}
+            d = {'total_rows': self.spark_df.count()}
             l.append(d)
-            d={'total_columns': len(self.spark_df.columns)}
+            d = {'total_columns': len(self.spark_df.columns)}
             l.append(d)
-            x= json.dumps(l)
+            x = json.dumps(l)
             return x
 
         except:
@@ -105,7 +104,7 @@ class AppService:
 
     def get_last(self):
         try:
-            return jsonify(self.spark_df.orderBy(self.spark_df[0],ascending=False).limit(1).toJSON().collect())
+            return jsonify(self.spark_df.orderBy(self.spark_df[0], ascending=False).limit(1).toJSON().collect())
         except:
             return None
 
@@ -117,7 +116,7 @@ class AppService:
 
     def get_tail(self, num):
         try:
-            return jsonify(self.spark_df.orderBy(self.spark_df[0],ascending=False).limit(int(num)).toJSON().collect())
+            return jsonify(self.spark_df.orderBy(self.spark_df[0], ascending=False).limit(int(num)).toJSON().collect())
         except:
             return None
 
@@ -173,7 +172,6 @@ class AppService:
         except Exception as e:
             print(e)
             return None
-
 
     def order_col(self, column, condition):
         try:

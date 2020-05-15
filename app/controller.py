@@ -1,8 +1,10 @@
 import os
 from datetime import datetime
-from flask_cors import CORS
+
 import flask
-from flask import request, jsonify, Response, send_from_directory
+from flask import request, Response, send_from_directory
+from flask_cors import CORS
+
 from app.service import AppService
 from helpers import helper
 
@@ -71,6 +73,8 @@ def choose_web_table(index):
 def find_col_min(column):
     result = service.get_col_min(column)
     if result:
+        helper.write_history_csv(datetime.now(), "get_col_min",
+                                 'print(spark_df.agg({{{name}: "min"}}))'.format(name=column))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -80,6 +84,8 @@ def find_col_min(column):
 def find_col_max(column):
     result = service.get_col_max(column)
     if result:
+        helper.write_history_csv(datetime.now(), "get_col_max",
+                                 'print(spark_df.agg({{{name}: "max"}}))'.format(name=column))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -89,6 +95,8 @@ def find_col_max(column):
 def find_col_avg(column):
     result = service.get_col_avg(column)
     if result:
+        helper.write_history_csv(datetime.now(), "get_col_avg",
+                                 'print(spark_df.agg({{{name}: "avg"}}))'.format(name=column))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -98,6 +106,8 @@ def find_col_avg(column):
 def find_col_sum(column):
     result = service.get_col_sum(column)
     if result:
+        helper.write_history_csv(datetime.now(), "get_col_sum",
+                                 'print(spark_df.agg({{{name}: "sum"}}))'.format(name=column))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -107,9 +117,12 @@ def find_col_sum(column):
 def find_col_countdistinct(column):
     result = service.get_col_countdistinct(column)
     if result:
+        helper.write_history_csv(datetime.now(), "get_col_countdistinct",
+                                 'print(spark_df.agg(f.countDistinct(column)))')
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
 
 @app.route('/function/schema', methods=['GET'])
 def get_schema():
@@ -117,13 +130,21 @@ def get_schema():
     result = service.df_printSchema()
     if result:
         helper.write_history_csv(datetime.now(), "df_printSchema", 'print(spark_df.printSchema())')
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
 @app.route('/function/sort/<column>/<condition>', methods=['GET'])
 def sort_col(column, condition):
     result = service.order_col(column, condition)
     if result:
+        helper.write_history_csv(datetime.now(), "order_col",
+                                 'spark_df=spark_df.orderBy(column, ascending=bool_condition)')
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
 
 @app.route('/function/first', methods=['GET'])
 def get_first():
@@ -131,23 +152,33 @@ def get_first():
     result = service.get_first()
     if result:
         helper.write_history_csv(datetime.now(), "get_first", 'print(spark_df.first())')
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
 @app.route('/function/rename/<old_column_name>/<new_col_name>', methods=['GET'])
 def rename_col(old_column_name, new_col_name):
     result = service.rename_column(old_column_name, new_col_name)
     if result:
+        helper.write_history_csv(datetime.now(), "rename_column",
+                                 'spark_df=spark_df.withColumnRenamed(old_column, new_column)')
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
 
 @app.route('/function/last', methods=['GET'])
 def get_last():
     # service.read_original_file()
     result = service.get_last()
     if result:
-        helper.write_history_csv(datetime.now(), "get_last", 'print(spark_df.orderBy(spark_df[0],ascending=False).head(1))')
+        helper.write_history_csv(datetime.now(), "get_last",
+                                 'print(spark_df.orderBy(spark_df[0],ascending=False).head(1))')
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
 
 @app.route('/function/head/<num>', methods=['GET'])
 def get_head(num):
@@ -159,12 +190,14 @@ def get_head(num):
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
 
+
 @app.route('/function/tail/<num>', methods=['GET'])
 def get_tail(num):
     # service.read_original_file()
     result = service.get_tail(num)
     if result:
-        helper.write_history_csv(datetime.now(), "get_tail", 'print(spark_df.orderBy(spark_df[0],ascending=False).head(int(num)))')
+        helper.write_history_csv(datetime.now(), "get_tail",
+                                 'print(spark_df.orderBy(spark_df[0],ascending=False).head(int(num)))')
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -177,6 +210,7 @@ def drop_col(column):
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)
