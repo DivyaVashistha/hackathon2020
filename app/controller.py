@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-
+from flask_cors import CORS
 import flask
 from flask import request, jsonify, Response, send_from_directory
 from app.service import AppService
@@ -8,6 +8,8 @@ from helpers import helper
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
+# enabling cors for all
+CORS(app)
 
 service = AppService()
 
@@ -149,6 +151,10 @@ def get_schema():
     result = service.df_printSchema()
     if result:
         helper.write_history_csv(datetime.now(), "df_printSchema", 'print(spark_df.printSchema())')
+@app.route('/function/sort/<column>/<condition>', methods=['GET'])
+def sort_col(column, condition):
+    result = service.order_col(column, condition)
+    if result:
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -159,6 +165,10 @@ def get_first():
     result = service.get_first()
     if result:
         helper.write_history_csv(datetime.now(), "get_first", 'print(spark_df.first())')
+@app.route('/function/rename/<old_column_name>/<new_col_name>', methods=['GET'])
+def rename_col(old_column_name, new_col_name):
+    result = service.rename_column(old_column_name, new_col_name)
+    if result:
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -196,6 +206,13 @@ def get_tail(num):
 
 
 
+@app.route('/function/drop/<column>', methods=['GET'])
+def drop_col(column):
+    result = service.drop_column(column)
+    if result:
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)

@@ -1,7 +1,6 @@
 import json
 import os
 from datetime import datetime
-
 from helpers import helper
 from helpers.helper import *
 import pandas as pd
@@ -46,11 +45,12 @@ class AppService:
             data = pd.read_csv(file)
             write_csv(data)
             self.spark_df = self.sqlContext.createDataFrame(data)
-            return jsonify(self.spark_df.toJSON().collect())
+            return self.get_json_df_response()
         except Exception as e:
             print(e)
             return None
-
+    def get_json_df_response(self):
+        return jsonify(self.spark_df.limit(10).toJSON().collect())
     def get_web_csv(self, request_url):
         try:
             response = r.get(request_url).content
@@ -140,31 +140,65 @@ class AppService:
     def get_col_min(self, column):
         try:
             return jsonify(self.spark_df.agg({column: "min"}).collect()[0])
-        except:
+        except Exception as e:
+            print(e)
             return None
 
     def get_col_max(self, column):
         try:
             return jsonify(self.spark_df.agg({column: "max"}).collect()[0])
-        except:
+        except Exception as e:
+            print(e)
             return None
 
     def get_col_sum(self, column):
         try:
             return jsonify(self.spark_df.agg({column: "sum"}).collect()[0])
-        except:
+        except Exception as e:
+            print(e)
             return None
 
     def get_col_countdistinct(self, column):
         try:
             return jsonify(self.spark_df.agg(f.countDistinct(column)).collect()[0])
-        except:
+        except Exception as e:
+            print(e)
             return None
 
     def get_col_avg(self, column):
         try:
             return jsonify(self.spark_df.agg({column: "avg"}).collect()[0])
-        except:
+        except Exception as e:
+            print(e)
+            return None
+
+
+    def order_col(self, column, condition):
+        try:
+            bool_condition = True
+            if condition == '0':
+                bool_condition = False
+            self.spark_df = self.spark_df.orderBy(column, ascending=bool_condition)
+            return self.get_json_df_response()
+        except Exception as e:
+            print(e)
+            return None
+
+    def rename_column(self, old_column, new_column):
+        try:
+
+            self.spark_df = self.spark_df.withColumnRenamed(old_column, new_column)
+            return self.get_json_df_response()
+        except Exception as e:
+            print(e)
+            return None
+
+    def drop_column(self, column):
+        try:
+            self.spark_df = self.spark_df.drop(column)
+            return self.get_json_df_response()
+        except Exception as e:
+            print(e)
             return None
 
     # def hdfs_makedir(self):
