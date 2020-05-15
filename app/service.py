@@ -1,16 +1,16 @@
 import json
-import os
-from datetime import datetime
+
+import pandas as pd
+import pyspark.sql.functions as f
+import requests as r
+from flask import jsonify
+from hdfs import InsecureClient
+from pyspark import SQLContext
+from pyspark.sql import SparkSession
+from pyspark.sql.types import IntegerType, StringType
 
 from helpers import helper
 from helpers.helper import *
-import pandas as pd
-from flask import jsonify
-from pyspark import SQLContext
-from pyspark.sql import SparkSession
-import requests as r
-from hdfs import InsecureClient
-import pyspark.sql.functions as f
 
 UPLOAD_DIRECTORY = "./files"
 UPLOAD_DIRECTORY = os.path.abspath(UPLOAD_DIRECTORY)
@@ -46,10 +46,13 @@ class AppService:
             data = pd.read_csv(file)
             write_csv(data)
             self.spark_df = self.sqlContext.createDataFrame(data)
-            return jsonify(self.spark_df.toJSON().collect())
+            return self.get_json_df_response()
         except Exception as e:
             print(e)
             return None
+
+    def get_json_df_response(self, number=10):
+        return jsonify(self.spark_df.limit(number).toPandas().to_dict('records'))
 
     def get_web_csv(self, request_url):
         try:
@@ -74,21 +77,21 @@ class AppService:
 
     def df_printSchema(self):
         try:
-            schema= self.spark_df.schema.json()
-            df_cols=json.loads(schema)
-            l=[]
+            schema = self.spark_df.schema.json()
+            df_cols = json.loads(schema)
+            l = []
             for i in df_cols['fields']:
-                d={}
-                d['name']=i['name']
-                d['nullable']=i['nullable']
-                d['type']=i['type']
+                d = {}
+                d['name'] = i['name']
+                d['nullable'] = i['nullable']
+                d['type'] = i['type']
                 l.append(d)
 
-            d={'total_rows':self.spark_df.count()}
+            d = {'total_rows': self.spark_df.count()}
             l.append(d)
-            d={'total_columns': len(self.spark_df.columns)}
+            d = {'total_columns': len(self.spark_df.columns)}
             l.append(d)
-            x= json.dumps(l)
+            x = jsonify(l)
             return x
 
         except:
@@ -96,26 +99,26 @@ class AppService:
 
     def get_first(self):
         try:
-            return jsonify(self.spark_df.limit(1).toJSON().collect())
+            return self.get_json_df_response(1)
         except Exception as e:
             print(e)
             return None
 
     def get_last(self):
         try:
-            return jsonify(self.spark_df.orderBy(self.spark_df[0],ascending=False).limit(1).toJSON().collect())
+            return jsonify(self.spark_df.orderBy(self.spark_df[0], ascending=False).limit(1).toPandas().to_dict('records'))
         except:
             return None
 
     def get_head(self, num):
         try:
-            return jsonify(self.spark_df.limit(int(num)).toJSON().collect())
+            return jsonify(self.spark_df.limit(int(num)).toPandas().to_dict('records'))
         except:
             return None
 
     def get_tail(self, num):
         try:
-            return jsonify(self.spark_df.orderBy(self.spark_df[0],ascending=False).limit(int(num)).toJSON().collect())
+            return jsonify(self.spark_df.orderBy(self.spark_df[0], ascending=False).limit(int(num)).toPandas().to_dict('records'))
         except:
             return None
 
@@ -123,6 +126,72 @@ class AppService:
         # for undo
         df = self.spark.read.format("csv").option("header", "true").load(UPLOAD_DIRECTORY + "/input_file.csv")
         self.spark_df = df
+
+
+    def invalid(self):
+        pass
+
+    def get_col_min(self, column):
+        try:
+            return jsonify(self.spark_df.agg({column: "min"}).collect()[0])
+        except Exception as e:
+            print(e)
+            return None
+
+    def get_col_max(self, column):
+        try:
+            return jsonify(self.spark_df.agg({column: "max"}).collect()[0])
+        except Exception as e:
+            print(e)
+            return None
+
+    def get_col_sum(self, column):
+        try:
+            return jsonify(self.spark_df.agg({column: "sum"}).collect()[0])
+        except Exception as e:
+            print(e)
+            return None
+
+    def get_col_countdistinct(self, column):
+        try:
+            return jsonify(self.spark_df.agg(f.countDistinct(column)).collect()[0])
+        except Exception as e:
+            print(e)
+            return None
+
+    def get_col_avg(self, column):
+        try:
+            return jsonify(self.spark_df.agg({column: "avg"}).collect()[0])
+        except Exception as e:
+            print(e)
+            return None
+
+    def order_col(self, column, condition):
+        try:
+            bool_condition = True
+            if condition == '0':
+                bool_condition = False
+            self.spark_df = self.spark_df.orderBy(column, ascending=bool_condition)
+            return self.get_json_df_response()
+        except Exception as e:
+            print(e)
+            return None
+
+    def rename_column(self, old_column, new_column):
+        try:
+            self.spark_df = self.spark_df.withColumnRenamed(old_column, new_column)
+            return self.get_json_df_response()
+        except Exception as e:
+            print(e)
+            return None
+
+    def drop_column(self, column):
+        try:
+            self.spark_df = self.spark_df.drop(column)
+            return self.get_json_df_response()
+        except Exception as e:
+            print(e)
+            return None
 
     def execute_final_df(self):
         # for undo
@@ -132,40 +201,54 @@ class AppService:
         for x in functions:
             method_name = getattr(self, x, lambda: "invalid")
             # Call the method as we return it
-            method_name()
+            param=df.query('function == @x').head(1).iloc[0]['params']
+            if param=='na':
+                method_name()
+            else:
+                l=param.split('|')
+                method_name(*l)
+            helper.clean_history()
+        return self.get_json_df_response()
 
-    def invalid(self):
-        pass
-
-    def get_col_min(self, column):
+    def replace(self,colname,tovalue,fromval):
         try:
-            return jsonify(self.spark_df.agg({column: "min"}).collect()[0])
+            self.spark_df = self.spark_df.withColumn(colname, f.regexp_replace(colname, fromval, tovalue))
+            return self.get_json_df_response()
+        except Exception as e:
+            print(e)
+            return None
+
+    def to_int(self,column_name):
+         try:
+             self.spark_df = self.spark_df.withColumn(column_name, self.spark_df[column_name].cast(IntegerType()))
+             return self.get_json_df_response()
+         except Exception as e:
+            print(e)
+            return None
+
+    def bfill(self):
+         try:
+             df = self.spark_df.toPandas().bfill(axis ='rows')
+             return jsonify(df.to_dict('records'))
+         except Exception as e:
+            print(e)
+            return None
+
+    def ffill(self):
+         try:
+             df = self.spark_df.toPandas().ffill(axis ='rows')
+             return jsonify(df.to_dict('records'))
+         except Exception as e:
+            print(e)
+            return None
+
+    def to_string(self,column_name):
+        try:
+            self.spark_df = self.spark_df.withColumn(column_name, self.spark_df[column_name].cast(StringType()))
+            return self.get_json_df_response()
         except:
             return None
 
-    def get_col_max(self, column):
-        try:
-            return jsonify(self.spark_df.agg({column: "max"}).collect()[0])
-        except:
-            return None
-
-    def get_col_sum(self, column):
-        try:
-            return jsonify(self.spark_df.agg({column: "sum"}).collect()[0])
-        except:
-            return None
-
-    def get_col_countdistinct(self, column):
-        try:
-            return jsonify(self.spark_df.agg(f.countDistinct(column)).collect()[0])
-        except:
-            return None
-
-    def get_col_avg(self, column):
-        try:
-            return jsonify(self.spark_df.agg({column: "avg"}).collect()[0])
-        except:
-            return None
 
     # def hdfs_makedir(self):
     #     self.client.makedirs('/hackathon')
@@ -191,3 +274,5 @@ class AppService:
     #     with self.client.write('/tmp/my_file.csv', encoding='utf-8') as writer:
     #         self.pd_df.to_csv(writer)
     #         print('done')
+
+

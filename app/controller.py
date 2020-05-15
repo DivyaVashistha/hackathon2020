@@ -2,12 +2,16 @@ import os
 from datetime import datetime
 
 import flask
-from flask import request, jsonify, Response, send_from_directory
+from flask import request, Response, send_from_directory
+from flask_cors import CORS
+
 from app.service import AppService
 from helpers import helper
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
+# enabling cors for all
+CORS(app)
 
 service = AppService()
 
@@ -23,47 +27,13 @@ def get_file():
     return send_from_directory(UPLOAD_DIRECTORY, filename=path, as_attachment=True)
 
 
-# Create some test data for our catalog in the form of a list of dictionaries.
-books = [
-    {'id': 0,
-     'title': 'A Fire Upon the Deep',
-     'author': 'Vernor Vinge',
-     'first_sentence': 'The coldsleep itself was dreamless.',
-     'year_published': '1992'},
-    {'id': 1,
-     'title': 'The Ones Who Walk Away From Omelas',
-     'author': 'Ursula K. Le Guin',
-     'first_sentence': 'With a clamor of bells that set the swallows soaring, the Festival of Summer came to the city Omelas, bright-towered by the sea.',
-     'published': '1973'},
-    {'id': 2,
-     'title': 'Dhalgren',
-     'author': 'Samuel R. Delany',
-     'first_sentence': 'to wound the autumnal city.',
-     'published': '1975'}
-]
-
-@app.route('/api/v1/resources/books', methods=['GET'])
-def api_id():
-    # Check if an ID was provided as part of the URL.
-    # If ID is provided, assign it to a variable.
-    # If no ID is provided, display an error in the browser.
-    if 'id' in request.args:
-        id = int(request.args['id'])
+@app.route("/get_table", methods=['GET'])
+def get_table():
+    result = service.get_json_df_response()
+    if result:
+        return result
     else:
-        return "Error: No id field provided. Please specify an id."
-
-    # Create an empty list for our results
-    results = []
-
-    # Loop through the data and match results that fit the requested ID.
-    # IDs are unique, but other fields might return many results
-    for book in books:
-        if book['id'] == id:
-            results.append(book)
-
-    # Use the jsonify function from Flask to convert our list of
-    # Python dictionaries to the JSON format.
-    return jsonify(results)
+        return Response("{'error':'csv is not uploaded yet'}", status=500, mimetype='application/json')
 
 
 @app.errorhandler(404)
@@ -103,6 +73,8 @@ def choose_web_table(index):
 def find_col_min(column):
     result = service.get_col_min(column)
     if result:
+        helper.write_history_csv(datetime.now(), "get_col_min",
+                                 'print(spark_df.agg({{{name}: "min"}}))'.format(name=column),"{}".format(column))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -112,6 +84,8 @@ def find_col_min(column):
 def find_col_max(column):
     result = service.get_col_max(column)
     if result:
+        helper.write_history_csv(datetime.now(), "get_col_max",
+                                 'print(spark_df.agg({{{name}: "max"}}))'.format(name=column),"{}".format(column))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -121,6 +95,8 @@ def find_col_max(column):
 def find_col_avg(column):
     result = service.get_col_avg(column)
     if result:
+        helper.write_history_csv(datetime.now(), "get_col_avg",
+                                 'print(spark_df.agg({{{name}: "avg"}}))'.format(name=column),"{}".format(column))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -130,6 +106,8 @@ def find_col_avg(column):
 def find_col_sum(column):
     result = service.get_col_sum(column)
     if result:
+        helper.write_history_csv(datetime.now(), "get_col_sum",
+                                 'print(spark_df.agg({{{name}: "sum"}}))'.format(name=column),"{}".format(column))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -139,9 +117,12 @@ def find_col_sum(column):
 def find_col_countdistinct(column):
     result = service.get_col_countdistinct(column)
     if result:
+        helper.write_history_csv(datetime.now(), "get_col_countdistinct",
+                                 'print(spark_df.agg(f.countDistinct({name})))'.format(name=column),"{}".format(column))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
 
 @app.route('/function/schema', methods=['GET'])
 def get_schema():
@@ -153,6 +134,18 @@ def get_schema():
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
 
+
+@app.route('/function/sort/<column>/<condition>', methods=['GET'])
+def sort_col(column, condition):
+    result = service.order_col(column, condition)
+    if result:
+        helper.write_history_csv(datetime.now(), "order_col",
+                                 'spark_df=spark_df.orderBy({col}, ascending={con})'.format(col=column,con=condition),"{}|{}".format(column,condition))
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
 @app.route('/function/first', methods=['GET'])
 def get_first():
     # service.read_original_file()
@@ -163,37 +156,138 @@ def get_first():
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
 
+
+@app.route('/function/rename/<old_column_name>/<new_col_name>', methods=['GET'])
+def rename_col(old_column_name, new_col_name):
+    result = service.rename_column(old_column_name, new_col_name)
+    if result:
+        helper.write_history_csv(datetime.now(), "rename_column",
+                                 'spark_df=spark_df.withColumnRenamed({o}, {n})'.format(o=old_column_name,n=new_col_name),"{}|{}".format(old_column_name,new_col_name))
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
 @app.route('/function/last', methods=['GET'])
 def get_last():
     # service.read_original_file()
     result = service.get_last()
     if result:
-        helper.write_history_csv(datetime.now(), "get_last", 'print(spark_df.orderBy(spark_df[0],ascending=False).head(1))')
+        helper.write_history_csv(datetime.now(), "get_last",
+                                 'print(spark_df.orderBy(spark_df[0],ascending=False).head(1))')
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
 
 @app.route('/function/head/<num>', methods=['GET'])
 def get_head(num):
     # service.read_original_file()
     result = service.get_head(num)
     if result:
-        helper.write_history_csv(datetime.now(), "get_head", 'print(spark_df.head(int(num)))')
+        helper.write_history_csv(datetime.now(), "get_head", 'print(spark_df.head(int({n})))'.format(n=num),"{}".format(num))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
 
 @app.route('/function/tail/<num>', methods=['GET'])
 def get_tail(num):
     # service.read_original_file()
     result = service.get_tail(num)
     if result:
-        helper.write_history_csv(datetime.now(), "get_tail", 'print(spark_df.orderBy(spark_df[0],ascending=False).head(int(num)))')
+        helper.write_history_csv(datetime.now(), "get_tail",
+                                 'print(spark_df.orderBy(spark_df[0],ascending=False).head(int({n})))'.format(n=num),"{}".format(num))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
 
 
+@app.route('/function/drop/<column>', methods=['GET'])
+def drop_col(column):
+    result = service.drop_column(column)
+    if result:
+        helper.write_history_csv(datetime.now(), "drop_column",
+                                 'spark_df=spark_df.drop({name})'.format(name=column),"{}".format(column))
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
+@app.route('/function/undo', methods=['GET'])
+def undo():
+    helper.undo_history()
+    result = service.execute_final_df()
+    if result:
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
+
+
+@app.route("/download/code", methods=['GET'])
+def get_code():
+    """Download a file."""
+    helper.write_code()
+    path = 'code.txt'
+    return send_from_directory(UPLOAD_DIRECTORY, filename=path, as_attachment=True)
+
+@app.route("function/replace/<colname>/<tovalue>/<fromval>")
+def replace(colname,tovalue,fromval):
+    result = service.replace(colname,tovalue,fromval)
+    if result:
+        helper.write_history_csv(datetime.now(), "replace",
+                                 'spark_df=spark_df.withColumn({n}, f.regexp_replace({n2}, {f}, {t}))'.format(n=colname,n2=colname,f=fromval,t=tovalue), "{}|{}|{}".format(colname,fromval,tovalue))
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
+@app.route("function/to_int/<colname>")
+def to_int(colname):
+    result = service.to_int(colname)
+    if result:
+        helper.write_history_csv(datetime.now(), "to_int",
+                                 'spark_df=spark_df.withColumn({}, self.spark_df[{}].cast(IntegerType()))'.format(colname,colname), "{}".format(colname))
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
+
+@app.route("function/to_string/<colname>")
+def to_string(colname):
+    result = service.to_string(colname)
+    if result:
+        helper.write_history_csv(datetime.now(), "to_int",
+                                 'spark_df=spark_df.withColumn({}, self.spark_df[{}].cast(StringType()))'.format(colname,colname), "{}".format(colname))
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
+
+@app.route("function/bfill")
+def bfill():
+    result = service.bfill()
+    if result:
+        helper.write_history_csv(datetime.now(), "bfill",
+                                 'df=spark_df.toPandas().bfill(axis ="rows")')
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
+
+@app.route("function/ffill")
+def ffill():
+    result = service.ffill()
+    if result:
+        helper.write_history_csv(datetime.now(), "ffill",
+                                 'df=spark_df.toPandas().ffill(axis ="rows")')
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
 
 
 
