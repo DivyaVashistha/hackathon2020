@@ -1,11 +1,13 @@
 import os
-
+from flask_cors import CORS
 import flask
 from flask import request, jsonify, Response, send_from_directory
 from app.service import AppService
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
+# enabling cors for all
+CORS(app)
 
 service = AppService()
 
