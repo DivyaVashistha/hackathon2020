@@ -11,3 +11,8 @@ val,date,function,code
 0,2020-05-15 12:09:23.337344,df_printSchema,spark_df.printSchema()
 0,2020-05-15 12:30:06.823092,df_printSchema,spark_df.printSchema()
 0,2020-05-15 12:39:11.566480,df_printSchema,spark_df.printSchema()
+0,2020-05-15 14:24:21.501919,get_last,"print(spark_df.orderBy(spark_df[0],ascending=False).head(1))"
+0,2020-05-15 14:24:34.408371,get_tail,"print(spark_df.orderBy(spark_df[0],ascending=False).head(int(num)))"
+0,2020-05-15 14:24:42.437024,get_head,print(spark_df.head(int(num)))
+0,2020-05-15 14:24:47.373200,get_last,"print(spark_df.orderBy(spark_df[0],ascending=False).head(1))"
+0,2020-05-15 14:24:52.830422,get_first,print(spark_df.first())

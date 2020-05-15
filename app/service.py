@@ -96,26 +96,26 @@ class AppService:
 
     def get_first(self):
         try:
-            return json.dumps(self.spark_df.first())
+            return jsonify(self.spark_df.limit(1).toJSON().collect())
         except Exception as e:
             print(e)
             return None
 
     def get_last(self):
         try:
-            return json.dumps(self.spark_df.orderBy(self.spark_df[0],ascending=False).head(1))
+            return jsonify(self.spark_df.orderBy(self.spark_df[0],ascending=False).limit(1).toJSON().collect())
         except:
             return None
 
     def get_head(self, num):
         try:
-            return jsonify(json.dumps(self.spark_df.head(int(num))))
+            return jsonify(self.spark_df.limit(int(num)).toJSON().collect())
         except:
             return None
 
     def get_tail(self, num):
         try:
-            return jsonify(json.dumps(self.spark_df.orderBy(self.spark_df[0],ascending=False).head(int(num))))
+            return jsonify(self.spark_df.orderBy(self.spark_df[0],ascending=False).limit(int(num)).toJSON().collect())
         except:
             return None
 
