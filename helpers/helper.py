@@ -31,7 +31,6 @@ def write_history_csv(datetime, function, code,params="na"):
     df.to_csv(UPLOAD_DIRECTORY+'/history.csv', mode='a', header=False)
 
 
-
 def undo_history():
     df = pd.read_csv(UPLOAD_DIRECTORY + '/history.csv')
     if len(df) == 0:
@@ -62,3 +61,12 @@ def write_code():
         file1 = open(UPLOAD_DIRECTORY + "/code.txt", "a")  # append mode
         file1.write("\n{}\n".format(x))
         file1.close()
+
+
+def clean_code_file():
+    starting_text = "from pyspark import SQLContext \nfrom pyspark.sql import SparkSession\nimport requests as r" \
+                    "\nspark = SparkSession.builder.appName('Python Spark SQL Hive integration').enableHiveSupport()" \
+                    ".getOrCreate() \nsqlContext = SQLContext(self.spark)\n"
+    file1 = open(UPLOAD_DIRECTORY + "/code.txt", "w")  # overwrite mode
+    file1.write(starting_text)
+    file1.close()

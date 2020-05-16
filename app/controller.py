@@ -22,6 +22,7 @@ UPLOAD_DIRECTORY = os.path.abspath(UPLOAD_DIRECTORY)
 def get_file():
     """Download a file."""
     path = service.result_csv
+    service.write_output_csv()
     return send_from_directory(UPLOAD_DIRECTORY, filename=path, as_attachment=True)
 
 
@@ -212,7 +213,7 @@ def drop_col(column):
     result = service.drop_column(column)
     if result:
         helper.write_history_csv(datetime.now(), "drop_column",
-                                 'spark_df=spark_df.drop({name})'.format(name=column),"{}".format(column))
+                                 'spark_df=spark_df.drop({name})'.format(name=column), "{}".format(column))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
@@ -237,7 +238,7 @@ def get_code():
     path = 'code.txt'
     return send_from_directory(UPLOAD_DIRECTORY, filename=path, as_attachment=True)
 
-@app.route("function/replace/<colname>/<tovalue>/<fromval>")
+@app.route("/function/replace/<colname>/<tovalue>/<fromval>")
 def replace(colname,tovalue,fromval):
     result = service.replace(colname,tovalue,fromval)
     if result:
@@ -248,7 +249,7 @@ def replace(colname,tovalue,fromval):
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
 
 
-@app.route("function/to_int/<colname>")
+@app.route("/function/to_int/<colname>")
 def to_int(colname):
     result = service.to_int(colname)
     if result:
@@ -260,7 +261,7 @@ def to_int(colname):
 
 
 
-@app.route("function/to_string/<colname>")
+@app.route("/function/to_string/<colname>")
 def to_string(colname):
     result = service.to_string(colname)
     if result:
@@ -278,14 +279,14 @@ def trim_col(column):
     result = service.trim_column(column)
     if result:
         helper.write_history_csv(datetime.now(), "trim_column",
-                                 "spark_df = spark_df.withColumn('temp', f.trim(f.col({{column}})))."
-                                 "drop({{column}}).withColumnRenamed('temp', {{column}})".format(name=column))
+                                 "spark_df = spark_df.withColumn('temp', f.trim(f.col({})))."
+                                 "drop({}).withColumnRenamed('temp', {})".format(column,column, column), "{}".format(column))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
 
 
-@app.route("function/bfill")
+@app.route("/function/bfill")
 def bfill():
     result = service.bfill()
     if result:
@@ -296,14 +297,14 @@ def upper_col(column):
     result = service.upper_column(column)
     if result:
         helper.write_history_csv(datetime.now(), "drop_column",
-                                 "spark_df = spark_df.withColumn('temp', f.upper(f.col({{column}})))."
-                                 "drop({{column}}).withColumnRenamed('temp', {{column}})".format(name=column))
+                                 "spark_df = spark_df.withColumn('temp', f.upper(f.col({})))."
+                                 "drop({}).withColumnRenamed('temp', {})".format(column,column, column), "{}".format(column))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
 
 
-@app.route("function/ffill")
+@app.route("/function/ffill")
 def ffill():
     result = service.ffill()
     if result:
@@ -318,8 +319,8 @@ def lower_col(column):
     result = service.lower_column(column)
     if result:
         helper.write_history_csv(datetime.now(), "drop_column",
-                                 "spark_df = spark_df.withColumn('temp', f.lower(f.col({{column}})))."
-                                 "drop({{column}}).withColumnRenamed('temp', {{column}})".format(name=column))
+                                 "spark_df = spark_df.withColumn('temp', f.lower(f.col({})))."
+                                 "drop({}).withColumnRenamed('temp', {})".format(column,column, column), "{}".format(column))
         return result
     else:
         return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')

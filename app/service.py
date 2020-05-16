@@ -22,8 +22,8 @@ class AppService:
         df = pd.DataFrame(list())
         df.to_csv('files/output.csv')
         df.to_csv('files/input_file.csv')
-        df.to_csv('files/history.csv')
-
+        clean_history()
+        clean_code_file()
 
         self.spark = SparkSession \
             .builder \
@@ -40,7 +40,12 @@ class AppService:
         df = pd.DataFrame(list())
         df.to_csv('files/output.csv')
         df.to_csv('files/input_file.csv')
-        df.to_csv('files/history.csv')
+        clean_history()
+        clean_code_file()
+
+
+    def write_output_csv(self):
+        self.spark_df.toPandas().to_csv("files/"+self.result_csv)
 
     def get_uploaded_csv(self, request):
         try:
