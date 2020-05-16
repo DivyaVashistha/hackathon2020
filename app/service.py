@@ -22,7 +22,7 @@ class AppService:
         df = pd.DataFrame(list())
         df.to_csv('files/output.csv')
         df.to_csv('files/input_file.csv')
-        clean_history()
+        clean_all_history()
         clean_code_file()
 
         self.spark = SparkSession \

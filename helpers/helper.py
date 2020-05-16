@@ -52,6 +52,14 @@ def clean_history():
         df=df.drop(df.head(1).index)
         df.to_csv(UPLOAD_DIRECTORY+'/history.csv', index=False)
 
+def clean_all_history():
+    df=pd.read_csv(UPLOAD_DIRECTORY+'/history.csv')
+    if len(df) == 0:
+        return 1
+    elif len(df) >= 1:
+        df = df.drop(df.head(len(df)).index)
+        df.to_csv(UPLOAD_DIRECTORY + '/history.csv', index=False)
+
 
 def write_code():
     df = pd.read_csv(UPLOAD_DIRECTORY + '/history.csv')
