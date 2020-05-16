@@ -292,6 +292,10 @@ def bfill():
     if result:
         helper.write_history_csv(datetime.now(), "bfill",
                                  'df=spark_df.toPandas().bfill(axis ="rows")')
+        return result
+    else:
+        return Response("{'error':'invalid operation '}", status=500, mimetype='application/json')
+
 @app.route('/function/to_upper/<column>', methods=['GET'])
 def upper_col(column):
     result = service.upper_column(column)

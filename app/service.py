@@ -119,14 +119,16 @@ class AppService:
 
     def get_head(self, num):
         try:
-            return self.get_json_df_response(num)
-        except:
+            return jsonify(self.spark_df.limit(int(num)).toPandas().to_dict('records'))
+        except Exception as e:
+            print(e)
             return None
 
     def get_tail(self, num):
         try:
             return jsonify(self.spark_df.orderBy(self.spark_df[0], ascending=False).limit(int(num)).toPandas().to_dict('records'))
-        except:
+        except Exception as e:
+            print(e)
             return None
 
     def read_original_file(self):
@@ -208,9 +210,9 @@ class AppService:
         for x in range(len(df)):
             # method_name = getattr(self, x, lambda: "invalid")
             # Call the method as we return it
-            row=df.loc[x].to_dict()
-            fun=row['function']
-            param=row['params']
+            row = df.loc[x].to_dict()
+            fun = row['function']
+            param = row['params']
             method_name = getattr(self, fun, lambda: "invalid")
             if param=='na':
                 method_name()

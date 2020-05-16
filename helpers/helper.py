@@ -10,7 +10,7 @@ def write_csv(pandas_df):
     """
     csv writer for pandas df only
     """
-    pandas_df.to_csv("files/input_file.csv")
+    pandas_df.to_csv("files/input_file.csv", index=False)
 
 
 def write_result_csv(spark_df):
