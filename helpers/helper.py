@@ -4,6 +4,8 @@ import pandas as pd
 
 UPLOAD_DIRECTORY = "./files"
 UPLOAD_DIRECTORY = os.path.abspath(UPLOAD_DIRECTORY)
+
+
 def write_csv(pandas_df):
     """
     csv writer for pandas df only
@@ -29,13 +31,14 @@ def write_history_csv(datetime, function, code,params="na"):
     df.to_csv(UPLOAD_DIRECTORY+'/history.csv', mode='a', header=False)
 
 
+
 def undo_history():
-    df=pd.read_csv(UPLOAD_DIRECTORY+'/history.csv')
+    df = pd.read_csv(UPLOAD_DIRECTORY + '/history.csv')
     if len(df) == 0:
         return 1
-    elif len(df)>=1:
-        df=df.drop(df.tail(1).index)
-        df.to_csv(UPLOAD_DIRECTORY+'/history.csv', index=False)
+    elif len(df) >= 1:
+        df = df.drop(df.tail(1).index)
+        df.to_csv(UPLOAD_DIRECTORY + '/history.csv', index=False)
 
 
 def write_history_backup(df):
@@ -52,10 +55,10 @@ def clean_history():
 
 
 def write_code():
-    df = pd.read_csv(UPLOAD_DIRECTORY+'/history.csv')
-    functions=df['code'].to_list()
+    df = pd.read_csv(UPLOAD_DIRECTORY + '/history.csv')
+    functions = df['code'].to_list()
 
     for x in functions:
-        file1 = open(UPLOAD_DIRECTORY+"/code.txt", "a")  # append mode
+        file1 = open(UPLOAD_DIRECTORY + "/code.txt", "a")  # append mode
         file1.write("\n{}\n".format(x))
         file1.close()

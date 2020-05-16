@@ -8,7 +8,6 @@ from hdfs import InsecureClient
 from pyspark import SQLContext
 from pyspark.sql import SparkSession
 from pyspark.sql.types import IntegerType, StringType
-
 from helpers import helper
 from helpers.helper import *
 
@@ -60,7 +59,7 @@ class AppService:
             df_list = pd.read_html(response)
             print(df_list)
             self.table_list = df_list
-            df_list = [x.to_json() for x in df_list]
+            df_list = [x.head(5).to_dict() for x in df_list]
             return jsonify(df_list)
         except Exception as e:
             print(e)
@@ -70,7 +69,7 @@ class AppService:
         try:
             write_csv(self.table_list[int(index)])
             self.spark_df = self.sqlContext.createDataFrame(self.table_list[int(index)])
-            return jsonify(self.spark_df.toJSON().collect())
+            return self.get_json_df_response()
         except Exception as e:
             print(e)
             return None
@@ -112,7 +111,7 @@ class AppService:
 
     def get_head(self, num):
         try:
-            return jsonify(self.spark_df.limit(int(num)).toPandas().to_dict('records'))
+            return self.get_json_df_response(num)
         except:
             return None
 
@@ -213,6 +212,11 @@ class AppService:
     def replace(self,colname,tovalue,fromval):
         try:
             self.spark_df = self.spark_df.withColumn(colname, f.regexp_replace(colname, fromval, tovalue))
+
+    def trim_column(self, column):
+        try:
+            self.spark_df = self.spark_df.withColumn('temp', f.trim(f.col(column))).drop(column)\
+                .withColumnRenamed('temp', column)
             return self.get_json_df_response()
         except Exception as e:
             print(e)
@@ -247,6 +251,22 @@ class AppService:
             self.spark_df = self.spark_df.withColumn(column_name, self.spark_df[column_name].cast(StringType()))
             return self.get_json_df_response()
         except:
+    def upper_column(self, column):
+        try:
+            self.spark_df = self.spark_df.withColumn('temp', f.upper(f.col(column))).drop(column)\
+                .withColumnRenamed('temp', column)
+            return self.get_json_df_response()
+        except Exception as e:
+            print(e)
+            return None
+
+    def lower_column(self, column):
+        try:
+            self.spark_df = self.spark_df.withColumn('temp', f.lower(f.col(column))).drop(column) \
+                .withColumnRenamed('temp', column)
+            return self.get_json_df_response()
+        except Exception as e:
+            print(e)
             return None
 
 
