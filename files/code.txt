@@ -9,3 +9,7 @@ spark = SparkSession \
             .enableHiveSupport() \
             .getOrCreate()
 sqlContext = SQLContext(self.spark)
+
+print(spark_df.orderBy(spark_df[0],ascending=False).head(1))
+
+spark_df=spark_df.withColumnRenamed(old_column, new_column)

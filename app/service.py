@@ -7,7 +7,8 @@ from flask import jsonify
 from hdfs import InsecureClient
 from pyspark import SQLContext
 from pyspark.sql import SparkSession
-
+from pyspark.sql.types import IntegerType, StringType
+from helpers import helper
 from helpers.helper import *
 
 UPLOAD_DIRECTORY = "./files"
@@ -125,15 +126,6 @@ class AppService:
         df = self.spark.read.format("csv").option("header", "true").load(UPLOAD_DIRECTORY + "/input_file.csv")
         self.spark_df = df
 
-    def execute_final_df(self):
-        # for undo
-        df = pd.read_csv(UPLOAD_DIRECTORY + '/history.csv')
-        functions = df['function'].to_list()
-        self.read_original_file()
-        for x in functions:
-            method_name = getattr(self, x, lambda: "invalid")
-            # Call the method as we return it
-            method_name()
 
     def invalid(self):
         pass
@@ -200,6 +192,27 @@ class AppService:
             print(e)
             return None
 
+    def execute_final_df(self):
+        # for undo
+        df = pd.read_csv(UPLOAD_DIRECTORY + '/history.csv')
+        functions = df['function'].to_list()
+        self.read_original_file()
+        for x in functions:
+            method_name = getattr(self, x, lambda: "invalid")
+            # Call the method as we return it
+            param=df.query('function == @x').head(1).iloc[0]['params']
+            if param=='na':
+                method_name()
+            else:
+                l=param.split('|')
+                method_name(*l)
+            helper.clean_history()
+        return self.get_json_df_response()
+
+    def replace(self,colname,tovalue,fromval):
+        try:
+            self.spark_df = self.spark_df.withColumn(colname, f.regexp_replace(colname, fromval, tovalue))
+
     def trim_column(self, column):
         try:
             self.spark_df = self.spark_df.withColumn('temp', f.trim(f.col(column))).drop(column)\
@@ -209,6 +222,35 @@ class AppService:
             print(e)
             return None
 
+    def to_int(self,column_name):
+         try:
+             self.spark_df = self.spark_df.withColumn(column_name, self.spark_df[column_name].cast(IntegerType()))
+             return self.get_json_df_response()
+         except Exception as e:
+            print(e)
+            return None
+
+    def bfill(self):
+         try:
+             df = self.spark_df.toPandas().bfill(axis ='rows')
+             return jsonify(df.to_dict('records'))
+         except Exception as e:
+            print(e)
+            return None
+
+    def ffill(self):
+         try:
+             df = self.spark_df.toPandas().ffill(axis ='rows')
+             return jsonify(df.to_dict('records'))
+         except Exception as e:
+            print(e)
+            return None
+
+    def to_string(self,column_name):
+        try:
+            self.spark_df = self.spark_df.withColumn(column_name, self.spark_df[column_name].cast(StringType()))
+            return self.get_json_df_response()
+        except:
     def upper_column(self, column):
         try:
             self.spark_df = self.spark_df.withColumn('temp', f.upper(f.col(column))).drop(column)\
@@ -226,6 +268,7 @@ class AppService:
         except Exception as e:
             print(e)
             return None
+
 
     # def hdfs_makedir(self):
     #     self.client.makedirs('/hackathon')
@@ -251,3 +294,5 @@ class AppService:
     #     with self.client.write('/tmp/my_file.csv', encoding='utf-8') as writer:
     #         self.pd_df.to_csv(writer)
     #         print('done')
+
+
