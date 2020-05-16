@@ -1,3 +1,2 @@
 val,date,function,code,params
-0,2020-05-16 01:12:16.530890,get_last,"print(spark_df.orderBy(spark_df[0],ascending=False).head(1))",na
-0,2020-05-16 01:12:22.472805,rename_column,"spark_df=spark_df.withColumnRenamed(old_column, new_column)",pickup_date|date
+0,2020-05-16 09:54:41.644389,get_last,"print(spark_df.orderBy(spark_df[0],ascending=False).head(1))",na

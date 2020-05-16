@@ -203,18 +203,20 @@ class AppService:
     def execute_final_df(self):
         # for undo
         df = pd.read_csv(UPLOAD_DIRECTORY + '/history.csv')
-        functions = df['function'].to_list()
+        # functions = df['function'].to_list()
         self.read_original_file()
-        for x in functions:
-            method_name = getattr(self, x, lambda: "invalid")
+        for x in range(len(df)):
+            # method_name = getattr(self, x, lambda: "invalid")
             # Call the method as we return it
-            param=df.query('function == @x').head(1).iloc[0]['params']
+            row=df.loc[x].to_dict()
+            fun=row['function']
+            param=row['params']
+            method_name = getattr(self, fun, lambda: "invalid")
             if param=='na':
                 method_name()
             else:
                 l=param.split('|')
                 method_name(*l)
-            helper.clean_history()
         return self.get_json_df_response()
 
     def replace(self,colname,tovalue,fromval):
