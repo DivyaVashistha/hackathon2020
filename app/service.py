@@ -22,6 +22,8 @@ class AppService:
         df = pd.DataFrame(list())
         df.to_csv('files/output.csv')
         df.to_csv('files/input_file.csv')
+        df.to_csv('files/history.csv')
+
 
         self.spark = SparkSession \
             .builder \
@@ -38,6 +40,7 @@ class AppService:
         df = pd.DataFrame(list())
         df.to_csv('files/output.csv')
         df.to_csv('files/input_file.csv')
+        df.to_csv('files/history.csv')
 
     def get_uploaded_csv(self, request):
         try:
@@ -212,6 +215,9 @@ class AppService:
     def replace(self,colname,tovalue,fromval):
         try:
             self.spark_df = self.spark_df.withColumn(colname, f.regexp_replace(colname, fromval, tovalue))
+        except Exception as e:
+            print(e)
+            return None
 
     def trim_column(self, column):
         try:
@@ -250,7 +256,9 @@ class AppService:
         try:
             self.spark_df = self.spark_df.withColumn(column_name, self.spark_df[column_name].cast(StringType()))
             return self.get_json_df_response()
-        except:
+        except Exception as e:
+            print(e)
+            return None
     def upper_column(self, column):
         try:
             self.spark_df = self.spark_df.withColumn('temp', f.upper(f.col(column))).drop(column)\
